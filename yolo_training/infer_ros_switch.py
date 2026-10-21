@@ -2,6 +2,7 @@
 import os
 import signal
 from collections import Counter
+from datetime import datetime
 from time import monotonic
 from pathlib import Path
 
@@ -31,6 +32,8 @@ class Detector(Node):
         self.declare_parameter('imgsz',320)
         self.declare_parameter('person_only',False)
         self.declare_parameter('enabled',True)
+        self.declare_parameter('capture_once',False)
+        self.capture_dir=Path.home()/'camera_dataset/captures'
         self.add_on_set_parameters_callback(self.validate_switch)
         torch.set_num_threads(3)
         self.model=YOLO(self.get_parameter('weights').value)
@@ -53,8 +56,8 @@ class Detector(Node):
 
     def validate_switch(self, parameters):
         for parameter in parameters:
-            if parameter.name=='enabled' and parameter.type_!=Parameter.Type.BOOL:
-                return SetParametersResult(successful=False, reason='enabled must be bool')
+            if parameter.name in ('enabled','capture_once') and parameter.type_!=Parameter.Type.BOOL:
+                return SetParametersResult(successful=False, reason=f'{parameter.name} must be bool')
         if any(p.name=='enabled' for p in parameters):
             # Discard cached frames on either transition; resume only with new input.
             self.latest=None
@@ -90,6 +93,21 @@ class Detector(Node):
         self.pub_counts.publish(output)
         self.last_count_log=now
 
+    def capture_if_requested(self, annotated):
+        if not self.get_parameter('capture_once').value:
+            return
+        try:
+            self.capture_dir.mkdir(parents=True, exist_ok=True)
+            path=self.capture_dir/('yolo_'+datetime.now().strftime('%Y%m%d_%H%M%S_%f')+'.png')
+            if not cv2.imwrite(str(path), annotated):
+                raise RuntimeError(f'이미지 저장 실패: {path}')
+            self.get_logger().info(f'검출 장면 캡처 저장: {path}')
+        except (OSError, RuntimeError, cv2.error) as error:
+            self.get_logger().error(f'캡처 실패: {error}')
+        finally:
+            # One request consumes one frame, including failed saves.
+            self.set_parameters([Parameter('capture_once', value=False)])
+
     def detect(self):
         if not self.get_parameter('enabled').value:
             self.latest=None
@@ -110,6 +128,7 @@ class Detector(Node):
                                   classes=[0] if self.get_parameter('person_only').value else self.active_classes)[0]
         self.log_class_counts(result)
         annotated=np.ascontiguousarray(result.plot())
+        self.capture_if_requested(annotated)
         output=Image()
         output.header=msg.header
         output.height,output.width=annotated.shape[:2]
