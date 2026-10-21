@@ -75,6 +75,22 @@ export ROS_DOMAIN_ID=44
 
 ## 실행 영상
 
-[영상 1 · 09:48:57](videos/demo_01.webm) · [영상 2 · 09:49:22](videos/demo_02.webm) · [영상 3 · 09:54:15](videos/demo_03.webm)
+### 영상 1
 
-원본 스크린캐스트 3개를 `videos/`에 포함했습니다. GitHub에서 미리보기가 제공되지 않으면 파일을 다운로드해 재생하세요.
+[![실행 영상 1](videos/demo_01.gif)](videos/demo_01.webm)
+
+[원본 영상 보기 · 09:48:57](videos/demo_01.webm)
+
+### 영상 2
+
+[![실행 영상 2](videos/demo_02.gif)](videos/demo_02.webm)
+
+[원본 영상 보기 · 09:49:22](videos/demo_02.webm)
+
+### 영상 3
+
+[![실행 영상 3](videos/demo_03.gif)](videos/demo_03.webm)
+
+[원본 영상 보기 · 09:54:15](videos/demo_03.webm)
+
+README에서는 크기와 프레임 수를 줄인 GIF가 자동 재생됩니다. 원본 WebM은 위 링크에서 확인할 수 있습니다.
